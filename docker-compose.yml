@@ -1,0 +1,28 @@
+services:
+  playwright:
+    build:
+      context: .
+      dockerfile: Dockerfile
+
+    container_name: playwright-tests
+    working_dir: /app
+
+    volumes:
+      - .:/app
+      - playwright_node_modules:/app/node_modules
+
+    ports:
+      - "9323:9323"
+
+    ipc: host
+
+    env_file:
+      - .env
+
+    environment:
+      CI: "true"
+
+    command: npx playwright test
+
+volumes:
+  playwright_node_modules:

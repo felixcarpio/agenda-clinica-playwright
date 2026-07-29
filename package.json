@@ -1,0 +1,21 @@
+{
+  "name": "playwright-docker",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Proyecto de automatización E2E con Playwright para Agenda de Clínica",
+  "scripts": {
+    "test": "playwright test",
+    "test:chromium": "playwright test --project=chromium",
+    "test:firefox": "playwright test --project=firefox",
+    "test:webkit": "playwright test --project=webkit",
+    "test:headed": "playwright test --headed",
+    "test:debug": "playwright test --debug",
+    "test:ui": "playwright test --ui --ui-host=0.0.0.0 --ui-port=9323",
+    "report": "playwright show-report --host=0.0.0.0"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.62.0",
+    "@types/node": "^24.0.0",
+    "typescript": "^5.0.0"
+  }
+}
