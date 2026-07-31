@@ -1,232 +1,85 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from '../../fixtures/pages.fixture';
 
-import { LoginPage } from '../../pages/login.page';
-import { PsychologistDashboardPage } from '../../pages/dashboards/psychologist-dashboard.page';
-import { routes } from '../../utils/routes';
+import { loginAs } from '../../helpers/auth.helper';
 
 /**
- * Obtiene y valida las credenciales del psicólogo.
+ * Pruebas automatizadas del dashboard del psicólogo.
  *
- * @returns Credenciales necesarias para iniciar sesión.
+ * Este archivo valida:
+ * - La estructura compartida de las pantallas autenticadas.
+ * - Las opciones de navegación exclusivas del psicólogo.
+ * - El encabezado y las tarjetas de actividad clínica.
  */
-function requirePsychologistCredentials(): {
-  email: string;
-  password: string;
-} {
-  const email = process.env.PSYCHOLOGIST_USER_EMAIL;
-  const password = process.env.PSYCHOLOGIST_USER_PASSWORD;
-
-  if (!email || !password) {
-    throw new Error(
-      'Faltan PSYCHOLOGIST_USER_EMAIL o ' +
-        'PSYCHOLOGIST_USER_PASSWORD en el archivo .env'
-    );
-  }
-
-  return { email, password };
-}
-
 test.describe('Dashboard del psicólogo', () => {
-  let psychologistDashboard: PsychologistDashboardPage;
-
   /**
-   * Antes de cada escenario:
-   * 1. Se abre la pantalla de inicio de sesión.
-   * 2. Se inicia sesión con un psicólogo activo.
-   * 3. Se crea el Page Object del dashboard.
-   * 4. Se valida la redirección al panel del psicólogo.
+   * Antes de cada escenario se inicia sesión con un psicólogo activo.
    */
   test.beforeEach(async ({ page }) => {
-    const credentials = requirePsychologistCredentials();
-    const loginPage = new LoginPage(page);
-
-    await loginPage.goto();
-    await loginPage.login(credentials.email, credentials.password);
-
-    psychologistDashboard = new PsychologistDashboardPage(page);
-
-    await expect(page).toHaveURL(
-      new RegExp(`${routes.dashboards.psychologist}/?$`)
-    );
+    await loginAs(page, 'PSYCHOLOGIST');
   });
 
-  test(
-    'Debe mostrar correctamente la estructura principal',
-    async ({ page }) => {
-      // Valida el título de la pestaña.
-      await expect(page).toHaveTitle('Psicólogo | Agenda Clínica');
+  test('Debe mostrar correctamente la estructura principal', async ({ page, psychologistDashboardPage }) => {
+    // Valida el título mostrado en la pestaña del navegador.
+    await expect(page).toHaveTitle('Psicólogo | Agenda Clínica');
 
-      // Valida la estructura compartida del dashboard.
-      await expect(psychologistDashboard.dashboardLayout).toBeVisible();
-      await expect(psychologistDashboard.sidebar).toBeVisible();
-      await expect(psychologistDashboard.header).toBeVisible();
-      await expect(psychologistDashboard.footer).toBeVisible();
+    // Valida la estructura, identidad visual, usuario y pie de página compartidos.
+    await psychologistDashboardPage.expectCommonStructure('Panel del psicólogo', 'Psicólogo');
+  });
 
-      // Valida la identidad visual del sidebar.
-      await expect(psychologistDashboard.sidebarLogo).toBeVisible();
-      await expect(
-        psychologistDashboard.sidebarBrandName
-      ).toHaveText('MindCare');
+  test('Debe mostrar las opciones de navegación del psicólogo', async ({ psychologistDashboardPage }) => {
+    // Valida la opción compartida de inicio.
+    await expect(psychologistDashboardPage.homeLink).toBeVisible();
+    await expect(psychologistDashboardPage.homeText).toHaveText('Inicio');
 
-      await expect(
-        psychologistDashboard.sidebarBrandSubtitle
-      ).toHaveText('Agenda clínica');
+    // Valida la opción de agenda.
+    await expect(psychologistDashboardPage.agendaLink).toBeVisible();
+    await expect(psychologistDashboardPage.agendaText).toHaveText('Mi agenda');
 
-      // Valida el encabezado general.
-      await expect(
-        psychologistDashboard.headerEyebrow
-      ).toHaveText('Agenda clínica');
+    // Valida la opción de cupos.
+    await expect(psychologistDashboardPage.slotsLink).toBeVisible();
+    await expect(psychologistDashboardPage.slotsText).toHaveText('Mis cupos');
 
-      await expect(
-        psychologistDashboard.headerTitle
-      ).toHaveText('Panel del psicólogo');
+    // Valida la opción de pacientes.
+    await expect(psychologistDashboardPage.patientsLink).toBeVisible();
+    await expect(psychologistDashboardPage.patientsText).toHaveText('Pacientes');
 
-      // Valida la información del usuario autenticado.
-      await expect(psychologistDashboard.userName).toBeVisible();
-      await expect(
-        psychologistDashboard.userRole
-      ).toHaveText('Psicólogo');
+    // Valida la opción de notas de sesión.
+    await expect(psychologistDashboardPage.sessionNotesLink).toBeVisible();
+    await expect(psychologistDashboardPage.sessionNotesText).toHaveText('Notas de sesión');
 
-      await expect(psychologistDashboard.userAvatar).toBeVisible();
+    // Valida la opción de asignaciones.
+    await expect(psychologistDashboardPage.assignmentsLink).toBeVisible();
+    await expect(psychologistDashboardPage.assignmentsText).toHaveText('Asignaciones');
+  });
 
-      // Valida el pie de página.
-      await expect(
-        psychologistDashboard.footerCopyright
-      ).toContainText('Agenda Clínica Psicológica');
+  test('Debe mostrar el encabezado y las tarjetas del psicólogo', async ({ psychologistDashboardPage }) => {
+    // Valida el encabezado propio del dashboard.
+    await expect(psychologistDashboardPage.dashboardHeading).toBeVisible();
+    await expect(psychologistDashboardPage.welcomeTitle).toBeVisible();
+    await expect(psychologistDashboardPage.welcomeDescription).toHaveText('Consulta tus próximas citas y el resumen de tu actividad clínica.');
 
-      await expect(
-        psychologistDashboard.footerVersion
-      ).toHaveText('Versión 1.0');
-    }
-  );
+    // Valida la tarjeta de próxima cita.
+    await expect(psychologistDashboardPage.nextAppointmentCard).toBeVisible();
+    await expect(psychologistDashboardPage.nextAppointmentTitle).toHaveText('Próxima cita');
+    await expect(psychologistDashboardPage.nextAppointmentSubtitle).toHaveText('Tu siguiente sesión programada.');
 
-  test(
-    'Debe mostrar las opciones de navegación del psicólogo',
-    async () => {
-      // Opción de inicio.
-      await expect(psychologistDashboard.homeLink).toBeVisible();
-      await expect(psychologistDashboard.homeText).toHaveText('Inicio');
+    // Valida la tarjeta de citas de hoy.
+    await expect(psychologistDashboardPage.todayAppointmentsCard).toBeVisible();
+    await expect(psychologistDashboardPage.todayAppointmentsTitle).toHaveText('Citas de hoy');
+    await expect(psychologistDashboardPage.todayAppointmentsSubtitle).toHaveText('Sesiones pendientes para este día.');
+    await expect(psychologistDashboardPage.agendaButton).toBeVisible();
+    await expect(psychologistDashboardPage.agendaButton).toHaveText('Ver agenda');
 
-      // Opción de agenda.
-      await expect(psychologistDashboard.agendaLink).toBeVisible();
-      await expect(psychologistDashboard.agendaText).toHaveText(
-        'Mi agenda'
-      );
+    // Valida la tarjeta de pacientes atendidos.
+    await expect(psychologistDashboardPage.attendedPatientsCard).toBeVisible();
+    await expect(psychologistDashboardPage.attendedPatientsTitle).toHaveText('Pacientes atendidos');
+    await expect(psychologistDashboardPage.attendedPatientsSubtitle).toHaveText('Pacientes con sesiones completadas.');
+    await expect(psychologistDashboardPage.attendedPatientsCount).toBeVisible();
+    await expect(psychologistDashboardPage.patientsButton).toHaveText('Ver pacientes');
 
-      // Opción de cupos.
-      await expect(psychologistDashboard.slotsLink).toBeVisible();
-      await expect(psychologistDashboard.slotsText).toHaveText(
-        'Mis cupos'
-      );
-
-      // Opción de pacientes.
-      await expect(psychologistDashboard.patientsLink).toBeVisible();
-      await expect(psychologistDashboard.patientsText).toHaveText(
-        'Pacientes'
-      );
-
-      // Opción de notas de sesión.
-      await expect(
-        psychologistDashboard.sessionNotesLink
-      ).toBeVisible();
-
-      await expect(
-        psychologistDashboard.sessionNotesText
-      ).toHaveText('Notas de sesión');
-
-      // Opción de asignaciones.
-      await expect(
-        psychologistDashboard.assignmentsLink
-      ).toBeVisible();
-
-      await expect(
-        psychologistDashboard.assignmentsText
-      ).toHaveText('Asignaciones');
-    }
-  );
-
-  test(
-    'Debe mostrar el encabezado y las tarjetas del psicólogo',
-    async () => {
-      // Valida el encabezado del dashboard.
-      await expect(
-        psychologistDashboard.dashboardHeading
-      ).toBeVisible();
-
-      await expect(
-        psychologistDashboard.welcomeTitle
-      ).toBeVisible();
-
-      await expect(
-        psychologistDashboard.welcomeDescription
-      ).toHaveText(
-        'Consulta tus próximas citas y el resumen de tu actividad clínica.'
-      );
-
-      // Tarjeta de próxima cita.
-      await expect(
-        psychologistDashboard.nextAppointmentCard
-      ).toBeVisible();
-
-      await expect(
-        psychologistDashboard.nextAppointmentTitle
-      ).toHaveText('Próxima cita');
-
-      await expect(
-        psychologistDashboard.nextAppointmentSubtitle
-      ).toHaveText('Tu siguiente sesión programada.');
-
-      // Tarjeta de citas de hoy.
-      await expect(
-        psychologistDashboard.todayAppointmentsCard
-      ).toBeVisible();
-
-      await expect(
-        psychologistDashboard.todayAppointmentsTitle
-      ).toHaveText('Citas de hoy');
-
-      await expect(
-        psychologistDashboard.todayAppointmentsSubtitle
-      ).toHaveText('Sesiones pendientes para este día.');
-
-      await expect(psychologistDashboard.agendaButton).toBeVisible();
-      await expect(
-        psychologistDashboard.agendaButton
-      ).toHaveText('Ver agenda');
-
-      // Tarjeta de pacientes atendidos.
-      await expect(
-        psychologistDashboard.attendedPatientsCard
-      ).toBeVisible();
-
-      await expect(
-        psychologistDashboard.attendedPatientsTitle
-      ).toHaveText('Pacientes atendidos');
-
-      await expect(
-        psychologistDashboard.attendedPatientsSubtitle
-      ).toHaveText('Pacientes con sesiones completadas.');
-
-      await expect(
-        psychologistDashboard.attendedPatientsCount
-      ).toBeVisible();
-
-      await expect(
-        psychologistDashboard.patientsButton
-      ).toHaveText('Ver pacientes');
-
-      // Tarjeta de asignaciones activas.
-      await expect(
-        psychologistDashboard.activeAssignmentsCard
-      ).toBeVisible();
-
-      await expect(
-        psychologistDashboard.activeAssignmentsTitle
-      ).toHaveText('Asignaciones activas');
-
-      await expect(
-        psychologistDashboard.activeAssignmentsSubtitle
-      ).toHaveText('Actividades pendientes o en progreso.');
-    }
-  );
+    // Valida la tarjeta de asignaciones activas.
+    await expect(psychologistDashboardPage.activeAssignmentsCard).toBeVisible();
+    await expect(psychologistDashboardPage.activeAssignmentsTitle).toHaveText('Asignaciones activas');
+    await expect(psychologistDashboardPage.activeAssignmentsSubtitle).toHaveText('Actividades pendientes o en progreso.');
+  });
 });

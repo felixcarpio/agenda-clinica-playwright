@@ -6,9 +6,15 @@
  */
 export const routes = {
   login: '/accounts/login/',
+
   dashboards: {
     admin: '/dashboard/administracion',
     patient: '/dashboard/paciente',
     psychologist: '/dashboard/psicologo',
+  },
+
+  psychologist: {
+    availabilitySlots: '/mis-cupos/',
+    createAvailabilitySlot: '/mis-cupos/nuevo/',
   },
 } as const;

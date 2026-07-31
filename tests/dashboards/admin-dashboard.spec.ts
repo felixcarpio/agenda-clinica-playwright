@@ -1,184 +1,88 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from '../../fixtures/pages.fixture';
 
-import { LoginPage } from '../../pages/login.page';
-import { AdminDashboardPage } from '../../pages/dashboards/admin-dashboard.page';
-import { routes } from '../../utils/routes';
+import { loginAs } from '../../helpers/auth.helper';
 
 /**
- * Obtiene y valida las credenciales del administrador.
+ * Pruebas automatizadas del dashboard del administrador.
  *
- * @returns Credenciales necesarias para iniciar sesión.
+ * Este archivo valida:
+ * - La estructura compartida de las pantallas autenticadas.
+ * - Las opciones de navegación exclusivas del administrador.
+ * - El encabezado y las tarjetas administrativas.
  */
-function requireAdminCredentials(): {
-  email: string;
-  password: string;
-} {
-  const email = process.env.ADMIN_USER_EMAIL;
-  const password = process.env.ADMIN_USER_PASSWORD;
-
-  if (!email || !password) {
-    throw new Error(
-      'Faltan ADMIN_USER_EMAIL o ' +
-        'ADMIN_USER_PASSWORD en el archivo .env'
-    );
-  }
-
-  return { email, password };
-}
-
 test.describe('Dashboard del administrador', () => {
-  let adminDashboard: AdminDashboardPage;
-
   /**
-   * Antes de cada escenario:
-   * 1. Se abre la pantalla de inicio de sesión.
-   * 2. Se inicia sesión con un administrador activo.
-   * 3. Se crea el Page Object del dashboard.
-   * 4. Se valida la redirección al panel administrativo.
+   * Antes de cada escenario se inicia sesión con un administrador activo.
    */
   test.beforeEach(async ({ page }) => {
-    const credentials = requireAdminCredentials();
-    const loginPage = new LoginPage(page);
-
-    await loginPage.goto();
-    await loginPage.login(credentials.email, credentials.password);
-
-    adminDashboard = new AdminDashboardPage(page);
-
-    await expect(page).toHaveURL(
-      new RegExp(`${routes.dashboards.admin}/?$`)
-    );
+    await loginAs(page, 'ADMIN');
   });
 
-  test(
-    'Debe mostrar correctamente la estructura principal',
-    async ({ page }) => {
-      await expect(page).toHaveTitle(
-        'Administración | Agenda Clínica'
-      );
+  test('Debe mostrar correctamente la estructura principal', async ({ page, adminDashboardPage }) => {
+    // Valida el título mostrado en la pestaña del navegador.
+    await expect(page).toHaveTitle('Administración | Agenda Clínica');
 
-      await expect(adminDashboard.dashboardLayout).toBeVisible();
-      await expect(adminDashboard.sidebar).toBeVisible();
-      await expect(adminDashboard.header).toBeVisible();
-      await expect(adminDashboard.footer).toBeVisible();
+    // Valida la estructura, identidad visual, usuario y pie de página compartidos.
+    await adminDashboardPage.expectCommonStructure('Panel de administración', 'Administrador');
+  });
 
-      await expect(adminDashboard.sidebarLogo).toBeVisible();
-      await expect(adminDashboard.sidebarBrandName).toHaveText(
-        'MindCare'
-      );
-      await expect(adminDashboard.sidebarBrandSubtitle).toHaveText(
-        'Agenda clínica'
-      );
+  test('Debe mostrar las opciones de navegación del administrador', async ({ adminDashboardPage }) => {
+    // Valida la opción compartida de inicio.
+    await expect(adminDashboardPage.homeLink).toBeVisible();
+    await expect(adminDashboardPage.homeText).toHaveText('Inicio');
 
-      await expect(adminDashboard.headerEyebrow).toHaveText(
-        'Agenda clínica'
-      );
-      await expect(adminDashboard.headerTitle).toHaveText(
-        'Panel de administración'
-      );
+    // Valida la opción de usuarios.
+    await expect(adminDashboardPage.usersLink).toBeVisible();
+    await expect(adminDashboardPage.usersText).toHaveText('Usuarios');
 
-      await expect(adminDashboard.userName).toBeVisible();
-      await expect(adminDashboard.userRole).toHaveText(
-        'Administrador'
-      );
-      await expect(adminDashboard.userAvatar).toBeVisible();
+    // Valida la opción de psicólogos.
+    await expect(adminDashboardPage.psychologistsLink).toBeVisible();
+    await expect(adminDashboardPage.psychologistsText).toHaveText('Psicólogos');
 
-      await expect(adminDashboard.footerCopyright).toContainText(
-        'Agenda Clínica Psicológica'
-      );
-      await expect(adminDashboard.footerVersion).toHaveText(
-        'Versión 1.0'
-      );
-    }
-  );
+    // Valida la opción de pacientes.
+    await expect(adminDashboardPage.patientsLink).toBeVisible();
+    await expect(adminDashboardPage.patientsText).toHaveText('Pacientes');
 
-  test(
-    'Debe mostrar las opciones de navegación del administrador',
-    async () => {
-      await expect(adminDashboard.homeLink).toBeVisible();
-      await expect(adminDashboard.homeText).toHaveText('Inicio');
+    // Valida la opción de reportes.
+    await expect(adminDashboardPage.reportsLink).toBeVisible();
+    await expect(adminDashboardPage.reportsText).toHaveText('Reportes');
+  });
 
-      await expect(adminDashboard.usersLink).toBeVisible();
-      await expect(adminDashboard.usersText).toHaveText('Usuarios');
+  test('Debe mostrar el encabezado y las tarjetas administrativas', async ({ adminDashboardPage }) => {
+    // Valida el encabezado propio del dashboard.
+    await expect(adminDashboardPage.dashboardHeading).toBeVisible();
+    await expect(adminDashboardPage.dashboardTitle).toHaveText('Panel de administración');
+    await expect(adminDashboardPage.dashboardDescription).toContainText('Consulta el estado general de las cuentas');
 
-      await expect(adminDashboard.psychologistsLink).toBeVisible();
-      await expect(adminDashboard.psychologistsText).toHaveText(
-        'Psicólogos'
-      );
+    // Valida la tarjeta de usuarios.
+    await expect(adminDashboardPage.usersCard).toBeVisible();
+    await expect(adminDashboardPage.usersTitle).toHaveText('Usuarios');
+    await expect(adminDashboardPage.usersSubtitle).toHaveText('Total de cuentas registradas');
+    await expect(adminDashboardPage.totalUsers).toBeVisible();
+    await expect(adminDashboardPage.usersButton).toHaveText('Ver usuarios');
 
-      await expect(adminDashboard.patientsLink).toBeVisible();
-      await expect(adminDashboard.patientsText).toHaveText(
-        'Pacientes'
-      );
+    // Valida la tarjeta de psicólogos.
+    await expect(adminDashboardPage.psychologistsCard).toBeVisible();
+    await expect(adminDashboardPage.psychologistsTitle).toHaveText('Psicólogos');
+    await expect(adminDashboardPage.activePsychologists).toBeVisible();
+    await expect(adminDashboardPage.psychologistsButton).toHaveText('Ver psicólogos');
 
-      await expect(adminDashboard.reportsLink).toBeVisible();
-      await expect(adminDashboard.reportsText).toHaveText(
-        'Reportes'
-      );
-    }
-  );
+    // Valida la tarjeta de pacientes.
+    await expect(adminDashboardPage.patientsCard).toBeVisible();
+    await expect(adminDashboardPage.patientsTitle).toHaveText('Pacientes');
+    await expect(adminDashboardPage.activePatients).toBeVisible();
+    await expect(adminDashboardPage.patientsButton).toHaveText('Ver pacientes');
 
-  test(
-    'Debe mostrar el encabezado y las tarjetas administrativas',
-    async () => {
-      await expect(adminDashboard.dashboardHeading).toBeVisible();
-      await expect(adminDashboard.dashboardTitle).toHaveText(
-        'Panel de administración'
-      );
-      await expect(adminDashboard.dashboardDescription).toContainText(
-        'Consulta el estado general de las cuentas'
-      );
+    // Valida la tarjeta de cuentas inactivas.
+    await expect(adminDashboardPage.inactiveAccountsCard).toBeVisible();
+    await expect(adminDashboardPage.inactiveAccountsTitle).toHaveText('Cuentas inactivas');
+    await expect(adminDashboardPage.inactiveAccountsCount).toBeVisible();
+    await expect(adminDashboardPage.inactiveAccountsButton).toHaveText('Ver cuentas inactivas');
 
-      // Tarjeta de usuarios.
-      await expect(adminDashboard.usersCard).toBeVisible();
-      await expect(adminDashboard.usersTitle).toHaveText('Usuarios');
-      await expect(adminDashboard.usersSubtitle).toHaveText(
-        'Total de cuentas registradas'
-      );
-      await expect(adminDashboard.totalUsers).toBeVisible();
-      await expect(adminDashboard.usersButton).toHaveText(
-        'Ver usuarios'
-      );
-
-      // Tarjeta de psicólogos.
-      await expect(adminDashboard.psychologistsCard).toBeVisible();
-      await expect(adminDashboard.psychologistsTitle).toHaveText(
-        'Psicólogos'
-      );
-      await expect(adminDashboard.activePsychologists).toBeVisible();
-      await expect(adminDashboard.psychologistsButton).toHaveText(
-        'Ver psicólogos'
-      );
-
-      // Tarjeta de pacientes.
-      await expect(adminDashboard.patientsCard).toBeVisible();
-      await expect(adminDashboard.patientsTitle).toHaveText(
-        'Pacientes'
-      );
-      await expect(adminDashboard.activePatients).toBeVisible();
-      await expect(adminDashboard.patientsButton).toHaveText(
-        'Ver pacientes'
-      );
-
-      // Tarjeta de cuentas inactivas.
-      await expect(adminDashboard.inactiveAccountsCard).toBeVisible();
-      await expect(adminDashboard.inactiveAccountsTitle).toHaveText(
-        'Cuentas inactivas'
-      );
-      await expect(adminDashboard.inactiveAccountsCount).toBeVisible();
-      await expect(adminDashboard.inactiveAccountsButton).toHaveText(
-        'Ver cuentas inactivas'
-      );
-
-      // Tarjeta de reportes.
-      await expect(adminDashboard.reportsCard).toBeVisible();
-      await expect(adminDashboard.reportsTitle).toHaveText(
-        'Reportes'
-      );
-      await expect(adminDashboard.totalAppointments).toBeVisible();
-      await expect(adminDashboard.reportsButton).toHaveText(
-        'Ver reportes'
-      );
-    }
-  );
+    // Valida la tarjeta de reportes.
+    await expect(adminDashboardPage.reportsCard).toBeVisible();
+    await expect(adminDashboardPage.reportsTitle).toHaveText('Reportes');
+    await expect(adminDashboardPage.totalAppointments).toBeVisible();
+    await expect(adminDashboardPage.reportsButton).toHaveText('Ver reportes');
+  });
 });

@@ -1,4 +1,4 @@
-import { type Locator, type Page } from '@playwright/test';
+import { expect, type Locator, type Page } from '@playwright/test';
 
 /**
  * Page Object base para las pantallas autenticadas.
@@ -11,6 +11,7 @@ import { type Locator, type Page } from '@playwright/test';
  * - Información del usuario.
  * - Menú desplegable del usuario.
  * - Pie de página.
+ * - Acciones y validaciones reutilizables.
  */
 export class DashboardPage {
   readonly page: Page;
@@ -63,22 +64,14 @@ export class DashboardPage {
     // Estructura principal.
     this.dashboardLayout = page.locator('#dashboard-layout');
     this.dashboardMain = page.locator('#dashboard-main');
-    this.pageContent = page.locator(
-      '#dashboard-page-content'
-    );
-    this.contentContainer = page.locator(
-      '#dashboard-content-container'
-    );
+    this.pageContent = page.locator('#dashboard-page-content');
+    this.contentContainer = page.locator('#dashboard-content-container');
 
     // Menú lateral.
     this.sidebar = page.locator('#app-sidebar');
     this.sidebarLogo = page.locator('#sidebar-logo');
-    this.sidebarBrandName = page.locator(
-      '#sidebar-brand-name'
-    );
-    this.sidebarBrandSubtitle = page.locator(
-      '#sidebar-brand-subtitle'
-    );
+    this.sidebarBrandName = page.locator('#sidebar-brand-name');
+    this.sidebarBrandSubtitle = page.locator('#sidebar-brand-subtitle');
 
     // Navegación compartida.
     this.homeLink = page.locator('#sidebar-home-link');
@@ -89,9 +82,7 @@ export class DashboardPage {
 
     // Encabezado.
     this.header = page.locator('#app-header');
-    this.headerEyebrow = page.locator(
-      '#app-header-eyebrow'
-    );
+    this.headerEyebrow = page.locator('#app-header-eyebrow');
     this.headerTitle = page.locator('#app-header-title');
 
     // Información del usuario.
@@ -101,28 +92,16 @@ export class DashboardPage {
 
     // Menú desplegable.
     this.userMenuToggle = page.locator('#user-menu-toggle');
-    this.userMenuDropdown = page.locator(
-      '#user-menu-dropdown'
-    );
-    this.dropdownUserName = page.locator(
-      '#user-menu-dropdown-name'
-    );
-    this.dropdownUserEmail = page.locator(
-      '#user-menu-dropdown-email'
-    );
-    this.profileLink = page.locator(
-      '#user-menu-profile-link'
-    );
+    this.userMenuDropdown = page.locator('#user-menu-dropdown');
+    this.dropdownUserName = page.locator('#user-menu-dropdown-name');
+    this.dropdownUserEmail = page.locator('#user-menu-dropdown-email');
+    this.profileLink = page.locator('#user-menu-profile-link');
     this.logoutButton = page.locator('#logout-button');
 
     // Pie de página.
     this.footer = page.locator('#app-footer');
-    this.footerCopyright = page.locator(
-      '#app-footer-copyright'
-    );
-    this.footerVersion = page.locator(
-      '#app-footer-version'
-    );
+    this.footerCopyright = page.locator('#app-footer-copyright');
+    this.footerVersion = page.locator('#app-footer-version');
   }
 
   /**
@@ -138,5 +117,45 @@ export class DashboardPage {
   async logout(): Promise<void> {
     await this.openUserMenu();
     await this.logoutButton.click();
+  }
+
+  /**
+   * Valida la estructura común de un dashboard autenticado.
+   *
+   * @param headerTitle Texto esperado en el encabezado.
+   * @param userRole Rol esperado para el usuario autenticado.
+   */
+  async expectCommonStructure(headerTitle: string, userRole: string): Promise<void> {
+    await expect(this.dashboardLayout).toBeVisible();
+    await expect(this.dashboardMain).toBeVisible();
+    await expect(this.pageContent).toBeVisible();
+    await expect(this.contentContainer).toBeVisible();
+    await expect(this.sidebar).toBeVisible();
+    await expect(this.header).toBeVisible();
+    await expect(this.footer).toBeVisible();
+    await expect(this.sidebarLogo).toBeVisible();
+    await expect(this.sidebarBrandName).toHaveText('MindCare');
+    await expect(this.sidebarBrandSubtitle).toHaveText('Agenda clínica');
+    await expect(this.headerEyebrow).toHaveText('Agenda clínica');
+    await expect(this.headerTitle).toHaveText(headerTitle);
+    await expect(this.userName).toBeVisible();
+    await expect(this.userRole).toHaveText(userRole);
+    await expect(this.userAvatar).toBeVisible();
+    await expect(this.footerCopyright).toContainText('Agenda Clínica Psicológica');
+    await expect(this.footerVersion).toHaveText('Versión 1.0');
+  }
+
+  /**
+   * Valida el contenido y el estado abierto del menú del usuario.
+   */
+  async expectUserMenuVisible(): Promise<void> {
+    await expect(this.userMenuDropdown).toBeVisible();
+    await expect(this.dropdownUserName).toBeVisible();
+    await expect(this.dropdownUserEmail).toBeVisible();
+    await expect(this.profileLink).toBeVisible();
+    await expect(this.profileLink).toHaveText('Mi perfil');
+    await expect(this.logoutButton).toBeVisible();
+    await expect(this.logoutButton).toHaveText('Cerrar sesión');
+    await expect(this.userMenuToggle).toHaveAttribute('aria-expanded', 'true');
   }
 }

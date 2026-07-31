@@ -4,6 +4,7 @@
     "module": "NodeNext",
     "moduleResolution": "NodeNext",
     "strict": true,
+    "noEmit": true,
     "esModuleInterop": true,
     "resolveJsonModule": true,
     "types": [
@@ -12,7 +13,11 @@
     ]
   },
   "include": [
+    "pages/**/*.ts",
     "tests/**/*.ts",
+    "helpers/**/*.ts",
+    "fixtures/**/*.ts",
+    "utils/**/*.ts",
     "playwright.config.ts"
   ]
 }
