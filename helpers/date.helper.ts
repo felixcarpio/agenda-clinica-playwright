@@ -79,15 +79,50 @@ export function buildFutureSlot(): SlotData {
 }
 
 /**
+ * Genera un cupo completamente ubicado en el pasado.
+ *
+ * Se utiliza el día anterior a la ejecución para evitar que
+ * diferencias de minutos o zona horaria vuelvan inestable la prueba.
+ */
+export function buildPastSlot(): SlotData {
+  const now = new Date();
+
+  const start = new Date(now);
+  start.setDate(start.getDate() - 1);
+  start.setHours(9, 0, 0, 0);
+
+  const end = new Date(start);
+  end.setHours(10, 0, 0, 0);
+
+  return buildSlotData(start, end);
+}
+
+/**
+ * Genera un cupo futuro cuya hora final es anterior a la inicial.
+ *
+ * El horario inválido será de 3:00 p. m. a 2:00 p. m.
+ */
+export function buildInvalidEndSlot(): SlotData {
+  const now = new Date();
+  const daysAhead = 15 + (now.getTime() % 90);
+
+  const start = new Date(now);
+  start.setDate(start.getDate() + daysAhead);
+  start.setHours(15, 0, 0, 0);
+
+  const end = new Date(start);
+  end.setHours(14, 0, 0, 0);
+
+  return buildSlotData(start, end);
+}
+
+/**
  * Desplaza el horario completo de un cupo.
  *
  * @param slot Cupo original.
  * @param hours Cantidad de horas que se agregarán.
  */
-export function shiftSlotHours(
-  slot: SlotData,
-  hours: number
-): SlotData {
+export function shiftSlotHours(slot: SlotData, hours: number): SlotData {
   const updatedStart = new Date(slot.start);
   updatedStart.setHours(updatedStart.getHours() + hours);
 

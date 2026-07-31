@@ -54,6 +54,10 @@ export class AvailabilitySlotPage extends DashboardPage {
   readonly submitButton: Locator;
   readonly cancelLink: Locator;
 
+  // Errores de validación.
+  readonly startTimeError: Locator;
+  readonly endTimeError: Locator;
+
   // Mensajes del sistema.
   readonly systemMessages: Locator;
   readonly successMessage: Locator;
@@ -102,6 +106,10 @@ export class AvailabilitySlotPage extends DashboardPage {
     this.submitButton = page.locator('#availability-slot-submit-button');
     this.cancelLink = page.locator('#availability-slot-cancel-link');
 
+    // Errores de validación.
+    this.startTimeError = page.locator('#availability-slot-start-error-1');
+    this.endTimeError = page.locator('#availability-slot-end-error-1');
+
     // Mensajes del sistema.
     this.systemMessages = page.locator('#system-messages');
     this.successMessage = page.locator('#system-messages [id^="system-message-text-"]');
@@ -130,10 +138,6 @@ export class AvailabilitySlotPage extends DashboardPage {
 
   /**
    * Completa y envía el formulario de creación de cupo.
-   *
-   * @param startTime Fecha y hora inicial en formato datetime-local.
-   * @param endTime Fecha y hora final en formato datetime-local.
-   * @param status Estado que tendrá el cupo.
    */
   async createSlot(startTime: string, endTime: string, status: string = 'AVAILABLE'): Promise<void> {
     await this.startTimeInput.fill(startTime);
@@ -144,8 +148,6 @@ export class AvailabilitySlotPage extends DashboardPage {
 
   /**
    * Filtra el listado por una fecha específica.
-   *
-   * @param date Fecha en formato YYYY-MM-DD.
    */
   async filterByDate(date: string): Promise<void> {
     await this.dateFromInput.fill(date);
@@ -167,8 +169,6 @@ export class AvailabilitySlotPage extends DashboardPage {
 
   /**
    * Abre el formulario de edición del cupo indicado.
-   *
-   * @param row Fila correspondiente al cupo.
    */
   async openSlotEdit(row: Locator): Promise<void> {
     await row.locator('[id^="availability-slot-edit-"]').click();
@@ -176,13 +176,18 @@ export class AvailabilitySlotPage extends DashboardPage {
 
   /**
    * Modifica el horario de un cupo y guarda los cambios.
-   *
-   * @param startTime Nueva fecha y hora inicial.
-   * @param endTime Nueva fecha y hora final.
    */
   async updateSlot(startTime: string, endTime: string): Promise<void> {
     await this.startTimeInput.fill(startTime);
     await this.endTimeInput.fill(endTime);
+    await this.submitButton.click();
+  }
+
+  /**
+   * Modifica el estado de un cupo y guarda los cambios.
+   */
+  async updateSlotStatus(status: string): Promise<void> {
+    await this.statusSelect.selectOption(status);
     await this.submitButton.click();
   }
 
@@ -198,8 +203,6 @@ export class AvailabilitySlotPage extends DashboardPage {
 
   /**
    * Valida los elementos comunes del formulario de creación y edición.
-   *
-   * @param title Título esperado en el formulario.
    */
   async expectSlotFormVisible(title: string): Promise<void> {
     await expect(this.formTitle).toHaveText(title);
@@ -229,10 +232,6 @@ export class AvailabilitySlotPage extends DashboardPage {
 
   /**
    * Valida los valores cargados en el formulario.
-   *
-   * @param startTime Fecha y hora inicial esperada.
-   * @param endTime Fecha y hora final esperada.
-   * @param status Estado esperado.
    */
   async expectSlotFormValues(startTime: string, endTime: string, status: string): Promise<void> {
     await expect(this.startTimeInput).toHaveValue(startTime);
@@ -241,9 +240,32 @@ export class AvailabilitySlotPage extends DashboardPage {
   }
 
   /**
-   * Valida un mensaje de operación exitosa.
+   * Valida el error mostrado cuando la fecha inicial está en el pasado.
    *
-   * @param message Texto o expresión regular esperada.
+   * @param message Texto esperado según la operación realizada.
+   */
+  async expectPastStartTimeError(message: string | RegExp): Promise<void> {
+    await expect(this.startTimeError).toBeVisible();
+    await expect(this.startTimeError).toHaveText(message);
+  }
+
+  /**
+   * Valida el error mostrado cuando la fecha final no es posterior.
+   */
+  async expectInvalidEndTimeError(): Promise<void> {
+    await expect(this.endTimeError).toBeVisible();
+    await expect(this.endTimeError).toHaveText('La fecha u hora final debe ser posterior a la fecha u hora inicial.');
+  }
+
+  /**
+   * Valida que no se haya mostrado un mensaje de operación exitosa.
+   */
+  async expectSuccessMessageNotVisible(): Promise<void> {
+    await expect(this.successMessage).toHaveCount(0);
+  }
+
+  /**
+   * Valida un mensaje de operación exitosa.
    */
   async expectSuccessMessage(message: string | RegExp): Promise<void> {
     await expect(this.systemMessages).toBeVisible();
@@ -252,8 +274,6 @@ export class AvailabilitySlotPage extends DashboardPage {
 
   /**
    * Valida que exista una fila con los datos indicados.
-   *
-   * @returns La fila localizada para realizar validaciones adicionales.
    */
   async expectSlotRowVisible(date: string, startTime: string, endTime: string, status: string = 'AVAILABLE'): Promise<Locator> {
     const row = this.getSlotRow(date, startTime, endTime, status);
