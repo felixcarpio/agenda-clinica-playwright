@@ -17,4 +17,9 @@ export const routes = {
     availabilitySlots: '/mis-cupos/',
     createAvailabilitySlot: '/mis-cupos/nuevo/',
   },
+  patients: {
+    list: '/mis-pacientes/',
+    create: '/mis-pacientes/nuevo/',
+    created: '/mis-pacientes/nuevo/creado/',
+  },
 } as const;

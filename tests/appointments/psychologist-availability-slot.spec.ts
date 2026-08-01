@@ -7,6 +7,24 @@ import { buildFutureSlot, buildInvalidEndSlot, buildPastSlot, shiftSlotHours, ty
 import { routes } from '../../utils/routes';
 
 /**
+ * Expresión regular utilizada para validar identificadores UUID
+ * dentro de las rutas públicas del sistema.
+ */
+const UUID_PATTERN =
+  '[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}';
+
+/**
+ * Ruta esperada para la edición de un cupo.
+ *
+ * Ejemplo:
+ * /mis-cupos/00d53576-0278-45a5-a19c-133660ba8d06/editar/
+ */
+const SLOT_EDIT_URL_PATTERN = new RegExp(
+  `/mis-cupos/${UUID_PATTERN}/editar/?$`,
+  'i'
+);
+
+/**
  * Datos utilizados por el flujo positivo principal.
  *
  * `sharedSlot` representa el cupo original que será creado
@@ -109,7 +127,7 @@ async function createSlotAndOpenEdit(page: Page, availabilitySlotPage: Availabil
   await availabilitySlotPage.openSlotEdit(slotRow);
 
   // Valida que la pantalla completa de edición se encuentre disponible.
-  await expect(page).toHaveURL(/\/mis-cupos\/[^/]+\/editar\/?$/);
+  await expect(page).toHaveURL(SLOT_EDIT_URL_PATTERN);
   await availabilitySlotPage.expectSlotFormVisible('Editar cupo');
   await availabilitySlotPage.expectInformationCardVisible();
 
@@ -206,7 +224,7 @@ test.describe.serial('Gestión de cupos del psicólogo', () => {
     await availabilitySlotPage.openSlotEdit(originalSlotRow);
 
     // Valida la URL, el formulario y la tarjeta informativa.
-    await expect(page).toHaveURL(/\/mis-cupos\/[^/]+\/editar\/?$/);
+    await expect(page).toHaveURL(SLOT_EDIT_URL_PATTERN);
     await availabilitySlotPage.expectSlotFormVisible('Editar cupo');
     await availabilitySlotPage.expectInformationCardVisible();
 
@@ -254,7 +272,7 @@ test.describe.serial('Gestión de cupos del psicólogo', () => {
     await availabilitySlotPage.openSlotEdit(availableSlotRow);
 
     // Valida la pantalla completa de edición.
-    await expect(page).toHaveURL(/\/mis-cupos\/[^/]+\/editar\/?$/);
+    await expect(page).toHaveURL(SLOT_EDIT_URL_PATTERN);
     await availabilitySlotPage.expectSlotFormVisible('Editar cupo');
     await availabilitySlotPage.expectInformationCardVisible();
 
@@ -302,7 +320,7 @@ test.describe.serial('Gestión de cupos del psicólogo', () => {
     await availabilitySlotPage.openSlotEdit(blockedSlotRow);
 
     // Valida la pantalla completa del formulario.
-    await expect(page).toHaveURL(/\/mis-cupos\/[^/]+\/editar\/?$/);
+    await expect(page).toHaveURL(SLOT_EDIT_URL_PATTERN);
     await availabilitySlotPage.expectSlotFormVisible('Editar cupo');
     await availabilitySlotPage.expectInformationCardVisible();
 
@@ -450,7 +468,7 @@ test.describe('Validaciones de edición de cupos', () => {
     await availabilitySlotPage.updateSlot(pastSlot.startDateTime, pastSlot.endDateTime);
 
     // Comprueba que el sistema permanezca en la misma pantalla de edición.
-    await expect(page).toHaveURL(/\/mis-cupos\/[^/]+\/editar\/?$/);
+    await expect(page).toHaveURL(SLOT_EDIT_URL_PATTERN);
 
     // Valida nuevamente todos los componentes principales del formulario.
     await availabilitySlotPage.expectSlotFormVisible('Editar cupo');
@@ -487,7 +505,7 @@ test.describe('Validaciones de edición de cupos', () => {
     await availabilitySlotPage.updateSlot(invalidEndSlot.startDateTime, invalidEndSlot.endDateTime);
 
     // Comprueba que el backend mantenga al usuario en la pantalla de edición.
-    await expect(page).toHaveURL(/\/mis-cupos\/[^/]+\/editar\/?$/);
+    await expect(page).toHaveURL(SLOT_EDIT_URL_PATTERN);
 
     // Valida nuevamente la pantalla completa después del envío inválido.
     await availabilitySlotPage.expectSlotFormVisible('Editar cupo');
